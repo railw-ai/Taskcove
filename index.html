@@ -74,7 +74,35 @@
       <h2>Available Tasks</h2>
       <p>Choose a task and follow its instructions.</p>
 
-      <div class="task">
+      
+<!-- TASKCOVE DASHBOARD -->
+<section id="dashboard" style="display:none;max-width:600px;margin:20px auto;padding:16px;font-family:Arial,sans-serif;">
+  <h2 style="text-align:center;color:#176b45;">Your Dashboard</h2>
+  <p style="text-align:center;">Choose what you want to do.</p>
+
+  <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
+    <button type="button" onclick="tcShowPanel('tasks')" style="padding:12px 18px;background:#176b45;color:white;border:0;border-radius:8px;">Tasks</button>
+    <button type="button" onclick="tcShowPanel('balance')" style="padding:12px 18px;background:#176b45;color:white;border:0;border-radius:8px;">My Balance</button>
+    <button type="button" onclick="tcShowPanel('referrals')" style="padding:12px 18px;background:#176b45;color:white;border:0;border-radius:8px;">Referrals</button>
+  </div>
+
+  <div id="balance-panel" style="display:none;margin-top:20px;padding:16px;border:1px solid #ddd;border-radius:8px;">
+    <h3>My Balance</h3>
+    <p>Your current balance: KSh 0.00</p>
+    <p style="font-size:13px;">Your actual rewards balance will be connected after secure reward processing is implemented.</p>
+  </div>
+
+  <div id="referrals-panel" style="display:none;margin-top:20px;padding:16px;border:1px solid #ddd;border-radius:8px;">
+    <h3>My Referrals</h3>
+    <p>Bonus per successful referral: KSh 50</p>
+    <p>Maximum referrals: 15</p>
+    <p>Your referral tracking will be activated in a later step.</p>
+  </div>
+
+  <button type="button" id="tc-back-dashboard" onclick="tcShowPanel('home')" style="display:none;margin-top:15px;padding:10px;border:1px solid #176b45;border-radius:6px;background:white;color:#176b45;">Back to Dashboard</button>
+</section>
+
+      <div class="tasks" id="tasks-section" style="display:none;">
         <span class="tag">Task 01</span>
         <h3>General Knowledge</h3>
         <p>Which planet is known as the Red Planet?</p>
@@ -322,5 +350,51 @@ document.querySelectorAll(".task").forEach((task, index) => {
 })();
 </script>
 
+
+<script>
+function tcShowPanel(panel) {
+  const tasks = document.getElementById('tasks-section');
+  const balance = document.getElementById('balance-panel');
+  const referrals = document.getElementById('referrals-panel');
+  const back = document.getElementById('tc-back-dashboard');
+
+  tasks.style.display = panel === 'tasks' ? 'block' : 'none';
+  balance.style.display = panel === 'balance' ? 'block' : 'none';
+  referrals.style.display = panel === 'referrals' ? 'block' : 'none';
+  back.style.display = panel === 'home' ? 'none' : 'block';
+
+  if (panel === 'home') {
+    document.getElementById('dashboard').scrollIntoView({ behavior: 'smooth' });
+  } else {
+    document.getElementById(
+      panel === 'tasks' ? 'tasks-section' :
+      panel === 'balance' ? 'balance-panel' : 'referrals-panel'
+    ).scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+async function tcRefreshAccess() {
+  const result = await supabaseClient.auth.getSession();
+  const signedIn = !!result.data.session;
+
+  document.getElementById('account-area').style.display =
+    signedIn ? 'none' : 'block';
+  document.getElementById('dashboard').style.display =
+    signedIn ? 'block' : 'none';
+
+  if (!signedIn) {
+    document.getElementById('tasks-section').style.display = 'none';
+    document.getElementById('balance-panel').style.display = 'none';
+    document.getElementById('referrals-panel').style.display = 'none';
+  }
+}
+
+tcRefreshAccess();
+
+supabaseClient.auth.onAuthStateChange(function () {
+  tcRefreshAccess();
+});
+</script>
+          
 </body>
 </html>
