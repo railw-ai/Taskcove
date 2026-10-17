@@ -183,5 +183,144 @@ document.querySelectorAll(".task").forEach((task, index) => {
   );
 </script>
 
+  
+<!-- TASKCOVE ACCOUNT AREA -->
+<section id="account-area" style="max-width:420px;margin:24px auto;padding:20px;background:#f5f7fa;border-radius:12px;color:#172033;font-family:Arial,sans-serif;">
+  <h2 style="text-align:center;color:#176b45;">Taskcove Account</h2>
+  <p id="auth-message" style="text-align:center;">Create an account or sign in.</p>
+
+  <form id="auth-form">
+    <label for="tc-username">Username</label>
+    <input id="tc-username" type="text" placeholder="Choose a username" autocomplete="username" required
+      style="box-sizing:border-box;width:100%;padding:12px;margin:6px 0 14px;border:1px solid #bbb;border-radius:6px;">
+
+    <label for="tc-email">Email address</label>
+    <input id="tc-email" type="email" placeholder="you@example.com" autocomplete="email" required
+      style="box-sizing:border-box;width:100%;padding:12px;margin:6px 0 14px;border:1px solid #bbb;border-radius:6px;">
+
+    <label for="tc-password">Password</label>
+    <input id="tc-password" type="password" placeholder="At least 6 characters" autocomplete="current-password" minlength="6" required
+      style="box-sizing:border-box;width:100%;padding:12px;margin:6px 0 14px;border:1px solid #bbb;border-radius:6px;">
+
+    <button id="auth-submit" type="submit"
+      style="width:100%;padding:12px;background:#176b45;color:white;border:0;border-radius:6px;font-weight:bold;">
+      Create Account
+    </button>
+  </form>
+
+  <button id="auth-switch" type="button"
+    style="width:100%;padding:12px;margin-top:10px;background:transparent;border:1px solid #176b45;border-radius:6px;color:#176b45;">
+    Already registered? Sign in
+  </button>
+
+  <button id="auth-logout" type="button" hidden
+    style="width:100%;padding:12px;margin-top:10px;background:#a32929;color:white;border:0;border-radius:6px;">
+    Sign Out
+  </button>
+</section>
+
+<script>
+(function () {
+  const form = document.getElementById("auth-form");
+  const username = document.getElementById("tc-username");
+  const email = document.getElementById("tc-email");
+  const password = document.getElementById("tc-password");
+  const submit = document.getElementById("auth-submit");
+  const switchButton = document.getElementById("auth-switch");
+  const logout = document.getElementById("auth-logout");
+  const message = document.getElementById("auth-message");
+
+  let mode = "signup";
+
+  function showMessage(text) {
+    message.textContent = text;
+  }
+
+  switchButton.addEventListener("click", function () {
+    mode = mode === "signup" ? "login" : "signup";
+    username.required = mode === "signup";
+    username.style.display = mode === "signup" ? "block" : "none";
+    username.previousElementSibling.style.display =
+      mode === "signup" ? "block" : "none";
+    submit.textContent = mode === "signup" ? "Create Account" : "Sign In";
+    switchButton.textContent = mode === "signup"
+      ? "Already registered? Sign in"
+      : "New to Taskcove? Create an account";
+    password.autocomplete =
+      mode === "signup" ? "new-password" : "current-password";
+    showMessage(mode === "signup"
+      ? "Create your Taskcove account."
+      : "Sign in to your Taskcove account.");
+  });
+
+  form.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    submit.disabled = true;
+    showMessage("Please wait...");
+
+    try {
+      let result;
+
+      if (mode === "signup") {
+        result = await supabaseClient.auth.signUp({
+          email: email.value.trim(),
+          password: password.value,
+          options: {
+            data: { username: username.value.trim() }
+          }
+        });
+      } else {
+        result = await supabaseClient.auth.signInWithPassword({
+          email: email.value.trim(),
+          password: password.value
+        });
+      }
+
+      if (result.error) throw result.error;
+
+      if (mode === "signup" && !result.data.session) {
+        showMessage("Account created! Check your email for a confirmation link before signing in.");
+      } else {
+        showMessage("You're signed in to Taskcove!");
+        username.value = "";
+        password.value = "";
+        await updateAuthStatus();
+      }
+    } catch (error) {
+      showMessage(error.message || "Something went wrong. Please try again.");
+    } finally {
+      submit.disabled = false;
+    }
+  });
+
+  async function updateAuthStatus() {
+    const result = await supabaseClient.auth.getUser();
+    if (result.data.user) {
+      showMessage("Signed in as " + result.data.user.email);
+      logout.hidden = false;
+    } else {
+      logout.hidden = true;
+    }
+  }
+
+  logout.addEventListener("click", async function () {
+    const result = await supabaseClient.auth.signOut();
+    if (result.error) {
+      showMessage(result.error.message);
+    } else {
+      showMessage("You've signed out.");
+      password.value = "";
+      logout.hidden = true;
+    }
+  });
+
+  updateAuthStatus();
+
+  supabaseClient.auth.onAuthStateChange(function () {
+    updateAuthStatus();
+  });
+})();
+</script>
+
 </body>
 </html>
