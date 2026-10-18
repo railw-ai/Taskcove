@@ -351,7 +351,16 @@ document.querySelectorAll(".task").forEach((task, index) => {
 </script>
 
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+const SUPABASE_URL = 'https://euslxvggupzmsxoestqg.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_GeJS-WchtJLIFKhpW44oxw_0uLgK88h';
+
+const supabaseClient = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY
+);
+</script><script>
 function tcShowPanel(panel) {
   const tasks = document.getElementById('tasks-section');
   const balance = document.getElementById('balance-panel');
@@ -397,5 +406,15 @@ supabaseClient.auth.onAuthStateChange(function () {
 </script>
 
 <!-- Taskcove connection setup -->  
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://euslxvggupzmsxoestqg.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_GeJS-WchtJLIFKhpW44oxw_0uLgK88h';
+
+const supabaseClient = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY
+);
+</script>  
 </body>
 </html>
