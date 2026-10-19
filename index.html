@@ -154,28 +154,13 @@
   <button type="button" id="tc-back-dashboard" onclick="tcShowPanel('home')" style="display:none;margin-top:15px;padding:10px;border:1px solid #176b45;border-radius:6px;background:white;color:#176b45;">Back to Dashboard</button>
 </section>
 
-      <div class="tasks" id="tasks-section" style="display:none;">
-        <span class="tag">Task 01</span>
-        <h3>General Knowledge</h3>
-        <p>Which planet is known as the Red Planet?</p>
-        <p>A. Earth</p>
-        <p>B. Mars</p>
-        <p>C. Jupiter</p>
-        <p>D. Venus</p>
-        <button onclick="alert('Task questions and reward verification will be added in the next stages.')">Start Task</button>
-      </div>
+      
+<section id="tasks-section" style="display:none;">
+  <h2>Available Tasks</h2>
+  <p id="tc-tasks-status">Your questions will appear here.</p>
+  <div id="tc-questions-list"></div>
+</section>
 
-      <div class="task">
-        <span class="tag">Task 02</span>
-        <h3>Technology</h3>
-        <p>What does CPU stand for?</p>
-        <p>A. Central Processing Unit</p>
-        <p>B. Computer Power Utility</p>
-        <p>C. Central Program User</p>
-        <p>D. Control Processing User</p>
-        <button onclick="alert('Task questions and reward verification will be added in the next stages.')">Start Task</button>
-      </div>
-    </section>
 
     <section class="card">
       <h2>Referral Rewards</h2>
@@ -532,6 +517,88 @@ if (tcQuestionForm) {
   });
 }
 </script>
+  
+<script>
+async function tcLoadQuestions() {
+  const list = document.getElementById('tc-questions-list');
+  const status = document.getElementById('tc-tasks-status');
+
+  if (!list || !status) return;
+
+  const { data: sessionData } =
+    await supabaseClient.auth.getSession();
+
+  if (!sessionData.session) {
+    status.textContent = 'Please sign in to view questions.';
+    return;
+  }
+
+  status.textContent = 'Loading questions...';
+  list.replaceChildren();
+
+  const { data, error } =
+    await supabaseClient.rpc('tc_get_questions');
+
+  if (error) {
+    status.textContent = 'Could not load questions: ' + error.message;
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    status.textContent = 'No active questions are available yet.';
+    return;
+  }
+
+  status.textContent = '';
+
+  data.forEach((q, index) => {
+    const card = document.createElement('div');
+    card.className = 'task';
+    card.style.cssText =
+      'margin:15px 0;padding:16px;border:1px solid #ddd;border-radius:10px;';
+
+    const heading = document.createElement('h3');
+    heading.textContent = 'Question ' + (index + 1);
+
+    const question = document.createElement('p');
+    question.textContent = q.question;
+
+    card.append(heading, question);
+
+    [
+      ['A', q.option_a],
+      ['B', q.option_b],
+      ['C', q.option_c],
+      ['D', q.option_d]
+    ].forEach(([letter, option]) => {
+      const label = document.createElement('label');
+      label.style.cssText = 'display:block;margin:10px 0;';
+
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = 'tc-answer-' + q.id;
+      radio.value = letter;
+      radio.style.marginRight = '8px';
+
+      label.append(radio, document.createTextNode(letter + '. ' + option));
+      card.appendChild(label);
+    });
+
+    const reward = document.createElement('p');
+    reward.textContent = 'Reward: KSh ' + Number(q.reward).toFixed(2);
+
+    card.appendChild(reward);
+    list.appendChild(card);
+  });
+}
+
+supabaseClient.auth.onAuthStateChange(function (event, session) {
+  if (session) {
+    setTimeout(tcLoadQuestions, 0);
+  }
+});
+</script>
+
 
 </body>
 </html>
