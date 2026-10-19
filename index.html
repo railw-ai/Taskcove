@@ -587,8 +587,69 @@ async function tcLoadQuestions() {
     const reward = document.createElement('p');
     reward.textContent = 'Reward: KSh ' + Number(q.reward).toFixed(2);
 
-    card.appendChild(reward);
-    list.appendChild(card);
+    
+card.appendChild(reward);
+
+const submitButton = document.createElement('button');
+submitButton.type = 'button';
+submitButton.textContent = 'Submit Answer';
+submitButton.style.cssText =
+  'padding:10px 16px;background:#176b45;color:white;border:0;border-radius:8px;cursor:pointer;';
+
+const answerStatus = document.createElement('p');
+answerStatus.setAttribute('role', 'status');
+
+submitButton.addEventListener('click', async function () {
+  const selected = card.querySelector(
+    'input[name="tc-answer-' + q.id + '"]:checked'
+  );
+
+  if (!selected) {
+    answerStatus.textContent = 'Please select an answer first.';
+    return;
+  }
+
+  submitButton.disabled = true;
+  answerStatus.textContent = 'Checking your answer...';
+
+  try {
+    const { data, error } = await supabaseClient.rpc(
+      'tc_submit_answer',
+      {
+        p_question_id: q.id,
+        p_selected_answer: selected.value
+      }
+    );
+
+    if (error) throw error;
+
+    const result = Array.isArray(data) ? data[0] : data;
+
+    answerStatus.textContent =
+      result.message +
+      (result.is_correct
+        ? ' Reward recorded: KSh ' +
+          Number(result.reward_amount).toFixed(2)
+        : '');
+
+    card.querySelectorAll('input[type="radio"]').forEach(function (radio) {
+      radio.disabled = true;
+    });
+
+    submitButton.disabled = true;
+  } catch (error) {
+    answerStatus.textContent = error.message;
+
+    if (!error.message.includes('already answered')) {
+      submitButton.disabled = false;
+    }
+  }
+});
+
+card.appendChild(submitButton);
+card.appendChild(answerStatus);
+list.appendChild(card);
+
   });
 }
 
