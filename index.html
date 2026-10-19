@@ -486,5 +486,52 @@ const supabaseClient = supabase.createClient(
   SUPABASE_PUBLISHABLE_KEY
 );
 </script>  
+  
+<script>
+const tcQuestionForm = document.getElementById('tc-question-form');
+
+if (tcQuestionForm) {
+  tcQuestionForm.addEventListener('submit', async function (event) {
+    event.preventDefault();
+
+    const status = document.getElementById('tc-question-status');
+    const saveButton = tcQuestionForm.querySelector(
+      'button[type="submit"]'
+    );
+
+    saveButton.disabled = true;
+    status.textContent = 'Saving question...';
+
+    try {
+      const { data, error } = await supabaseClient.rpc(
+        'tc_admin_add_question',
+        {
+          p_question: document.getElementById('tc-question').value.trim(),
+          p_option_a: document.getElementById('tc-option-a').value.trim(),
+          p_option_b: document.getElementById('tc-option-b').value.trim(),
+          p_option_c: document.getElementById('tc-option-c').value.trim(),
+          p_option_d: document.getElementById('tc-option-d').value.trim(),
+          p_correct_answer: document.getElementById('tc-correct-answer').value,
+          p_reward: Number(
+            document.getElementById('tc-question-reward').value
+          )
+        }
+      );
+
+      if (error) throw error;
+
+      status.textContent = 'Question saved successfully!';
+      tcQuestionForm.reset();
+      document.getElementById('tc-question-reward').value = '0';
+
+    } catch (error) {
+      status.textContent = 'Save failed: ' + error.message;
+    } finally {
+      saveButton.disabled = false;
+    }
+  });
+}
+</script>
+
 </body>
 </html>
