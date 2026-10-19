@@ -384,12 +384,30 @@ function tcShowPanel(panel) {
 
 async function tcRefreshAccess() {
   const result = await supabaseClient.auth.getSession();
-  const signedIn = !!result.data.session;
+  const session = result.data.session;
+  const signedIn = !!session;
 
   document.getElementById('account-area').style.display =
     signedIn ? 'none' : 'block';
   document.getElementById('dashboard').style.display =
     signedIn ? 'block' : 'none';
+
+  let isAdmin = false;
+
+  if (signedIn) {
+    const adminResult = await supabaseClient
+      .from('tc_admins')
+      .select('user_id')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+
+    isAdmin = !adminResult.error && !!adminResult.data;
+  }
+
+  const adminPanel = document.getElementById('admin-panel');
+  if (adminPanel) {
+    adminPanel.style.display = isAdmin ? 'block' : 'none';
+  }
 
   if (!signedIn) {
     document.getElementById('tasks-section').style.display = 'none';
