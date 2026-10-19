@@ -695,11 +695,16 @@ async function tcLoadBalance() {
   }
 }
 
+
 supabaseClient.auth.onAuthStateChange(function (event, session) {
   if (session) {
-    setTimeout(tcLoadQuestions, 0);
+    setTimeout(function () {
+      tcLoadQuestions();
+      tcLoadBalance();
+    }, 0);
   }
 });
+
 </script>
 
 
