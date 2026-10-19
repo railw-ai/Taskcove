@@ -138,11 +138,15 @@
     <button type="button" onclick="tcShowPanel('referrals')" style="padding:12px 18px;background:#176b45;color:white;border:0;border-radius:8px;">Referrals</button>
   </div>
 
-  <div id="balance-panel" style="display:none;margin-top:20px;padding:16px;border:1px solid #ddd;border-radius:8px;">
-    <h3>My Balance</h3>
-    <p>Your current balance: KSh 0.00</p>
-    <p style="font-size:13px;">Your actual rewards balance will be connected after secure reward processing is implemented.</p>
-  </div>
+  
+<div id="balance-panel" style="display:none;margin-top:20px;padding:16px;border:1px solid #ddd;border-radius:8px;">
+  <h3>My Balance</h3>
+  <p>Your current balance: <strong id="tc-current-balance">KSh 0.00</strong></p>
+  <p style="font-size:13px;">Your balance reflects rewards recorded in your Taskcove wallet.</p>
+  <button type="button" onclick="tcLoadBalance()">Refresh Balance</button>
+  <p id="tc-balance-message" style="font-size:13px;"></p>
+</div>
+
 
   <div id="referrals-panel" style="display:none;margin-top:20px;padding:16px;border:1px solid #ddd;border-radius:8px;">
     <h3>My Referrals</h3>
