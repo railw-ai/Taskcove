@@ -657,6 +657,44 @@ list.appendChild(card);
   });
 }
 
+async function tcLoadBalance() {
+  const balanceElement = document.getElementById('tc-current-balance');
+  const messageElement = document.getElementById('tc-balance-message');
+
+  if (!balanceElement || !messageElement) return;
+
+  messageElement.textContent = 'Loading balance...';
+
+  try {
+    const { data: sessionData } =
+      await supabaseClient.auth.getSession();
+
+    if (!sessionData.session) {
+      messageElement.textContent = 'Please sign in to view your balance.';
+      return;
+    }
+
+    const { data, error } =
+      await supabaseClient.rpc('tc_get_balance');
+
+    if (error) throw error;
+
+    const balance = Number(data ?? 0);
+
+    balanceElement.textContent =
+      'KSh ' + balance.toLocaleString('en-KE', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+
+    messageElement.textContent = 'Balance updated successfully.';
+  } catch (error) {
+    console.error('Balance loading error:', error);
+    messageElement.textContent =
+      'Could not load balance. Please try again.';
+  }
+}
+
 supabaseClient.auth.onAuthStateChange(function (event, session) {
   if (session) {
     setTimeout(tcLoadQuestions, 0);
