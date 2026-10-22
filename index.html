@@ -714,5 +714,72 @@ supabaseClient.auth.onAuthStateChange(function (event, session) {
   <div id="tc-bundles-list">Loading bundles...</div>
   <p id="tc-bundles-message"></p>
 </section>
+  
+<script>
+async function tcRequestWithdrawal() {
+  const message = document.getElementById('tc-balance-message');
+  const button = document.querySelector(
+    'button[onclick="tcRequestWithdrawal()"]'
+  );
+
+  const { data: sessionData, error: sessionError } =
+    await supabaseClient.auth.getSession();
+
+  if (sessionError || !sessionData.session) {
+    message.textContent = 'Please sign in first.';
+    return;
+  }
+
+  const amountText = prompt('Enter withdrawal amount in KSh:');
+  if (amountText === null) return;
+
+  const amount = Number(amountText.trim());
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    message.textContent = 'Enter a valid amount.';
+    return;
+  }
+
+  const phone = prompt(
+    'Enter your M-Pesa number, e.g. 0712345678:'
+  );
+
+  if (phone === null || !phone.trim()) {
+    message.textContent = 'Enter your M-Pesa number.';
+    return;
+  }
+
+  if (!confirm(
+    'Request KSh ' + amount +
+    '? This will not send money immediately.'
+  )) return;
+
+  button.disabled = true;
+  message.textContent = 'Submitting request...';
+
+  try {
+    const { data, error } = await supabaseClient.rpc(
+      'tc_request_withdrawal',
+      {
+        p_amount: amount,
+        p_mpesa_phone: phone.trim()
+      }
+    );
+
+    if (error) throw error;
+
+    message.textContent =
+      'Request submitted! Reference: ' + data +
+      '. Status: pending review.';
+
+    await tcLoadBalance();
+  } catch (error) {
+    message.textContent = 'Request failed: ' + error.message;
+  } finally {
+    button.disabled = false;
+  }
+}
+</script>
+
 </body>
 </html>
