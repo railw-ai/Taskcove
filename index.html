@@ -779,6 +779,123 @@ async function tcRequestWithdrawal() {
     button.disabled = false;
   }
 }
+  
+/* TASKCOVE ADMIN WITHDRAWAL MANAGEMENT */
+(function () {
+  const adminPanel = document.getElementById('admin-panel');
+  if (!adminPanel || document.getElementById('tc-admin-withdrawals')) return;
+
+  const section = document.createElement('section');
+  section.id = 'tc-admin-withdrawals';
+  section.style.cssText =
+    'margin-top:20px;padding:14px;border:1px solid #176b45;border-radius:10px;background:white;';
+
+  const heading = document.createElement('h4');
+  heading.textContent = 'Pending M-Pesa Withdrawals';
+
+  const refresh = document.createElement('button');
+  refresh.type = 'button';
+  refresh.textContent = 'Refresh Requests';
+
+  const status = document.createElement('p');
+  status.setAttribute('role', 'status');
+
+  const list = document.createElement('div');
+
+  section.append(heading, refresh, status, list);
+  adminPanel.appendChild(section);
+
+  async function tcLoadWithdrawals() {
+    status.textContent = 'Loading requests...';
+    list.replaceChildren();
+
+    try {
+      const { data: sessionData } =
+        await supabaseClient.auth.getSession();
+
+      if (!sessionData.session) {
+        status.textContent = 'Please sign in as administrator.';
+        return;
+      }
+
+      const { data, error } = await supabaseClient
+        .from('tc_withdrawal_requests')
+        .select('id, amount_kes, mpesa_phone, status, created_at')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        status.textContent = 'No pending withdrawal requests.';
+        return;
+      }
+
+      status.textContent = data.length + ' pending request(s).';
+
+      data.forEach(function (request) {
+        const card = document.createElement('div');
+        card.style.cssText =
+          'padding:12px;margin-top:10px;border:1px solid #ddd;border-radius:8px;';
+
+        const details = document.createElement('p');
+        details.textContent =
+          'Amount: KSh ' + request.amount_kes +
+          ' | M-Pesa: ' + request.mpesa_phone +
+          ' | Status: ' + request.status;
+
+        const send = document.createElement('button');
+        send.type = 'button';
+        send.textContent = 'Approve & Send M-Pesa';
+
+        send.addEventListener('click', async function () {
+          if (!confirm(
+            'Send KSh ' + request.amount_kes +
+            ' to ' + request.mpesa_phone +
+            '? Only approve if this request is legitimate.'
+          )) return;
+
+          send.disabled = true;
+          status.textContent = 'Submitting to M-Pesa sandbox...';
+
+          try {
+            const { data: result, error: payoutError } =
+              await supabaseClient.functions.invoke(
+                'taskcove-mpesa-b2c',
+                { body: { withdrawal_id: request.id } }
+              );
+
+            if (payoutError) throw payoutError;
+            if (result && result.error) {
+              throw new Error(result.error);
+            }
+
+            status.textContent =
+              'Request sent to the function. This does not confirm payment. ' +
+              'Verify the Safaricom callback before treating it as paid.';
+
+            await tcLoadWithdrawals();
+          } catch (err) {
+            status.textContent = 'Payout request failed: ' + err.message;
+            send.disabled = false;
+          }
+        });
+
+        card.append(details, send);
+        list.appendChild(card);
+      });
+    } catch (err) {
+      status.textContent =
+        'Could not load requests: ' + err.message +
+        '. Check administrator database permissions.';
+    }
+  }
+
+  refresh.addEventListener('click', tcLoadWithdrawals);
+  window.tcLoadWithdrawals = tcLoadWithdrawals;
+  tcLoadWithdrawals();
+})();
+
 </script>
 
 </body>
